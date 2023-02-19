@@ -40,6 +40,9 @@ dist: clean
 	gzip dmenu-$(VERSION).tar
 	rm -rf dmenu-$(VERSION)
 
+rmconfig:
+	rm -f config.h
+
 install: all
 	mkdir -p $(DESTDIR)$(PREFIX)/bin
 	cp -f dmenu dmenu_path dmenu_run stest $(DESTDIR)$(PREFIX)/bin
@@ -61,4 +64,4 @@ uninstall:
 		$(DESTDIR)$(MANPREFIX)/man1/dmenu.1\
 		$(DESTDIR)$(MANPREFIX)/man1/stest.1
 
-.PHONY: all options clean dist install uninstall
+.PHONY: all options clean dist rmconfig install uninstall
