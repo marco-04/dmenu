@@ -51,6 +51,7 @@ static struct item *items = NULL;
 static struct item *matches, *matchend;
 static struct item *prev, *curr, *next, *sel;
 static int mon = -1, screen;
+static int managed = 0;
 
 static Atom clip, utf8;
 static Display *dpy;
@@ -277,7 +278,7 @@ grabkeyboard(void)
 	struct timespec ts = { .tv_sec = 0, .tv_nsec = 1000000  };
 	int i;
 
-	if (embed)
+	if (embed || managed)
 		return;
 	/* try to grab keyboard, we may have to wait for another process to ungrab */
 	for (i = 0; i < 1000; i++) {
@@ -855,7 +856,7 @@ setup(void)
 	match();
 
 	/* create menu window */
-	swa.override_redirect = True;
+	swa.override_redirect = managed ? False : True;
 	swa.background_pixel = 0;
 	swa.border_pixel = 0;
 	swa.colormap = cmap;
@@ -876,6 +877,16 @@ setup(void)
 	                XNClientWindow, win, XNFocusWindow, win, NULL);
 
 	XMapRaised(dpy, win);
+
+	if (managed) {
+		XTextProperty prop;
+		char *windowtitle = prompt != NULL ? prompt : "dmenu";
+		Xutf8TextListToTextProperty(dpy, &windowtitle, 1, XUTF8StringStyle, &prop);
+		XSetWMName(dpy, win, &prop);
+		XSetTextProperty(dpy, win, &prop, XInternAtom(dpy, "_NET_WM_NAME", False));
+		XFree(prop.value);
+	} 
+
 	if (embed) {
 		XSelectInput(dpy, parentwin, FocusChangeMask | SubstructureNotifyMask);
 		if (XQueryTree(dpy, parentwin, &dw, &w, &dws, &du) && dws) {
@@ -921,6 +932,8 @@ main(int argc, char *argv[])
 			fstrstr = cistrstr;
 		} else if (!strcmp(argv[i], "-x"))   /* invert use_prefix */
 			use_prefix = !use_prefix;
+		else if (!strcmp(argv[i], "-wm")) /* display as managed wm window */
+			managed = 1;
 		else if (i + 1 == argc)
 			usage();
 		/* these options take one argument */
@@ -950,7 +963,7 @@ main(int argc, char *argv[])
 			colors[SchemeSelHighlight][ColFg] = argv[++i];
 		else if (!strcmp(argv[i], "-w"))   /* embedding window id */
 			embed = argv[++i];
-		else if (!strcmp(argv[i], "-bw"))
+    else if (!strcmp(argv[i], "-bw"))
 			border_width = atoi(argv[++i]); /* border width */
 		else
 			usage();
