@@ -30,8 +30,8 @@
 #define OPAQUE                0xffU
 
 /* enums */
-enum { SchemeNorm, SchemeSel, SchemeNormHighlight, SchemeSelHighlight,
-       SchemeOut, SchemeLast }; /* color schemes */
+enum { SchemeNorm, SchemeSel, SchemeOut, SchemeNormHighlight, SchemeSelHighlight,
+       SchemeOutHighlight, SchemeLast }; /* color schemes */
 
 
 struct item {
@@ -109,6 +109,43 @@ calcoffsets(void)
 			break;
 }
 
+static void
+drawhighlights(struct item *item, int x, int y, int maxw)
+{
+	char restorechar, tokens[sizeof text], *highlight,  *token;
+	int indentx, highlightlen;
+
+	drw_setscheme(drw, scheme[item == sel ? SchemeSelHighlight : item->out ? SchemeOutHighlight : SchemeNormHighlight]);
+	strcpy(tokens, text);
+	for (token = strtok(tokens, " "); token; token = strtok(NULL, " ")) {
+		highlight = fstrstr(item->text, token);
+		while (highlight) {
+			// Move item str end, calc width for highlight indent, & restore
+			highlightlen = highlight - item->text;
+			restorechar = *highlight;
+			item->text[highlightlen] = '\0';
+			indentx = TEXTW(item->text);
+			item->text[highlightlen] = restorechar;
+
+			// Move highlight str end, draw highlight, & restore
+			restorechar = highlight[strlen(token)];
+			highlight[strlen(token)] = '\0';
+			if (indentx - (lrpad / 2) - 1 < maxw)
+				drw_text(
+					drw,
+					x + indentx - (lrpad / 2) - 1,
+					y,
+					MIN(maxw - indentx, TEXTW(highlight) - lrpad),
+					bh, 0, highlight, 0
+				);
+			highlight[strlen(token)] = restorechar;
+
+			if (strlen(highlight) - strlen(token) < strlen(token)) break;
+			highlight = fstrstr(highlight + strlen(token), token);
+		}
+	}
+}
+
 static int
 max_textw(void)
 {
@@ -151,45 +188,6 @@ cistrstr(const char *h, const char *n)
 	}
 	return NULL;
 }
-
-static void
-drawhighlights(struct item *item, int x, int y, int maxw)
-{
-	int i, indent;
-	char *highlight;
-	char c;
-
-	if (!(strlen(item->text) && strlen(text)))
-		return;
-
-	drw_setscheme(drw, scheme[item == sel
-	                   ? SchemeSelHighlight
-	                   : SchemeNormHighlight]);
-	for (i = 0, highlight = item->text; *highlight && text[i];) {
-		if (*highlight == text[i]) {
-			/* get indentation */
-			c = *highlight;
-			*highlight = '\0';
-			indent = TEXTW(item->text);
-			*highlight = c;
-
-			/* highlight character */
-			c = highlight[1];
-			highlight[1] = '\0';
-			drw_text(
-				drw,
-				x + indent - (lrpad / 2),
-				y,
-				MIN(maxw - indent, TEXTW(highlight) - lrpad),
-				bh, 0, highlight, 0
-			);
-			highlight[1] = c;
-			i++;
-		}
-		highlight++;
-	}
-}
-
 
 static int
 drawitem(struct item *item, int x, int y, int w)
