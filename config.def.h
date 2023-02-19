@@ -7,6 +7,11 @@ static const unsigned int alpha = 0xf0;
 static const char *fonts[] = {
 	"monospace:size=10"
 };
+
+/* Center patch */
+static int centered = 0;                    /* -c option; centers dmenu on screen */
+static int min_width = 500;                    /* minimum width when centered */
+
 static const char *prompt      = NULL;      /* -p  option; prompt to the left of input field */
 static const char *colors[SchemeLast][2] = {
 	/*     fg         bg       */
