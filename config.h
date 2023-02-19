@@ -8,6 +8,11 @@ static const char *fonts[] = {
 	"monospace:size=10"
 };
 
+/*
+ * Use prefix matching by default; can be inverted with the -x flag.
+ */
+static int use_prefix = 1;
+
 /* Center patch */
 static int centered = 0;                    /* -c option; centers dmenu on screen */
 static int min_width = 500;                    /* minimum width when centered */
