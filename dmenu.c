@@ -36,6 +36,7 @@ enum { SchemeNorm, SchemeSel, SchemeOut, SchemeNormHighlight, SchemeSelHighlight
 
 struct item {
 	char *text;
+	char *otext;
 	struct item *left, *right;
 	int out;
 	double distance;
@@ -165,7 +166,7 @@ cleanup(void)
 	for (i = 0; i < SchemeLast; i++)
 		free(scheme[i]);
 	for (i = 0; items && items[i].text; ++i)
-		free(items[i].text);
+		free(revtab ? items[i].otext : items[i].text);
 	free(items);
 	drw_free(drw);
 	XSync(dpy, False);
@@ -645,7 +646,7 @@ insert:
 		break;
 	case XK_Return:
 	case XK_KP_Enter:
-		puts((sel && !(ev->state & ShiftMask)) ? sel->text : text);
+		puts((sel && !(ev->state & ShiftMask)) ? sel->otext : text);
 		if (!(ev->state & ControlMask)) {
 			cleanup();
 			exit(0);
@@ -722,13 +723,17 @@ readstdin(void)
 		}
 		if (line[len - 1] == '\n')
 			line[len - 1] = '\0';
-		items[i].text = line;
+		items[i].text = items[i].otext = line;
+		if ((line = strchr(line, '\t'))) {
+			*line++ = '\0';
+			revtab ? (items[i].text = line) : (items[i].otext = line);
+		}
 		items[i].out = 0;
 		line = NULL; /* next call of getline() allocates a new line */
 	}
 	free(line);
 	if (items)
-		items[i].text = NULL;
+		items[i].text = items[i].otext = NULL;
 	lines = MIN(lines, i);
 }
 
@@ -903,7 +908,7 @@ setup(void)
 static void
 usage(void)
 {
-	die("usage: dmenu [-bfivx] [-l lines] [-p prompt] [-fn font] [-m monitor]\n"
+	die("usage: dmenu [-bfirvx] [-l lines] [-p prompt] [-fn font] [-m monitor]\n"
 	    "             [-nb color] [-nf color] [-sb color] [-sf color] [-nhb color]\n"
       "             [-nhb color] [-nhf color] [-shb color] [-shf color] [-w windowid]\n");
 }
@@ -934,6 +939,8 @@ main(int argc, char *argv[])
 			use_prefix = !use_prefix;
 		else if (!strcmp(argv[i], "-wm")) /* display as managed wm window */
 			managed = 1;
+		else if (!strcmp(argv[i], "-r")) /* reverse the tab separation */
+			revtab = (!revtab);
 		else if (i + 1 == argc)
 			usage();
 		/* these options take one argument */
