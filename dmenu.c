@@ -57,6 +57,7 @@ static struct item *matches, *matchend;
 static struct item *prev, *curr, *next, *sel;
 static int mon = -1, screen;
 static int managed = 0;
+static int sortmatches = 1;
 
 static Atom clip, utf8;
 static Display *dpy;
@@ -369,7 +370,8 @@ fuzzymatch(void)
 			fuzzymatches[i] = it;
 		}
 		/* sort matches according to distance */
-		qsort(fuzzymatches, number_of_matches, sizeof(struct item*), compare_distance);
+		if (sortmatches)
+		  qsort(fuzzymatches, number_of_matches, sizeof(struct item*), compare_distance);
 		/* rebuild list of matches */
 		matches = matchend = NULL;
 		for (i = 0, it = fuzzymatches[i];  i < number_of_matches && it && \
@@ -417,13 +419,17 @@ match(void)
 				break;
 		if (i != tokc) /* not all tokens match */
 			continue;
-		/* exact matches go first, then prefixes, then substrings */
-		if (!tokc || !fstrncmp(text, item->text, textsize))
+		if (!sortmatches)
 			appenditem(item, &matches, &matchend);
-		else if (!fstrncmp(tokv[0], item->text, len))
-			appenditem(item, &lprefix, &prefixend);
-		else if (!use_prefix)
-			appenditem(item, &lsubstr, &substrend);
+    else {
+      /* exact matches go first, then prefixes, then substrings */
+      if (!tokc || !fstrncmp(text, item->text, textsize))
+        appenditem(item, &matches, &matchend);
+      else if (!fstrncmp(tokv[0], item->text, len))
+        appenditem(item, &lprefix, &prefixend);
+      else if (!use_prefix)
+        appenditem(item, &lsubstr, &substrend);
+    }
 	}
 	if (lprefix) {
 		if (matches) {
@@ -952,7 +958,7 @@ setup(void)
 static void
 usage(void)
 {
-	die("usage: dmenu [-bfiorRvX] [-fw] [-re] [-wm] [-l lines] [-h height] [-p prompt] [-fn font]\n"
+	die("usage: dmenu [-bfiorRSvX] [-fw] [-re] [-wm] [-l lines] [-h height] [-p prompt] [-fn font]\n"
 	    "             [-m monitor] [-nb color] [-nf color] [-sb color] [-sf color] [-nhb color]\n"
       "             [-nhb color] [-nhf color] [-shb color] [-shf color] [-w windowid]\n"
       "             [-x xoffset] [-y yoffset] [-z width]\n"
@@ -983,6 +989,8 @@ main(int argc, char *argv[])
 			fstrstr = cistrstr;
 		} else if (!strcmp(argv[i], "-X"))   /* invert use_prefix */
 			use_prefix = !use_prefix;
+		else if (!strcmp(argv[i], "-S"))   /* do not sort matches */
+			sortmatches = 0;
 		else if (!strcmp(argv[i], "-fw")) {   /* toggles fullwidth */
       if (!fullwidth)
 			  fullwidth = 1;
