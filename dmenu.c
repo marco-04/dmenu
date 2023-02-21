@@ -54,6 +54,7 @@ static size_t cursor;
 static struct item *items = NULL;
 static struct item *matches, *matchend;
 static struct item *prev, *curr, *next, *sel;
+static *prevotext = NULL;
 static int mon = -1, screen;
 static int managed = 0;
 
@@ -489,10 +490,12 @@ static void
 keypress(XKeyEvent *ev)
 {
 	char buf[64];
-	int len;
+	int len, arrowkey;
 	struct item * item;
 	KeySym ksym = NoSymbol;
 	Status status;
+
+  arrowkey = 0;
 
 	len = XmbLookupString(xic, ev, buf, sizeof buf, &ksym, &status);
 	switch (status) {
@@ -579,7 +582,7 @@ keypress(XKeyEvent *ev)
 
 	switch(ksym) {
 	default:
-insert:
+  insert:
 		if (!iscntrl((unsigned char)*buf))
 			insert(buf, len);
 		break;
@@ -625,6 +628,7 @@ insert:
 		break;
 	case XK_Left:
 	case XK_KP_Left:
+    arrowkey = 1;
 		if (cursor > 0 && (!sel || !sel->left || lines > 0)) {
 			cursor = nextrune(-1);
 			break;
@@ -638,6 +642,7 @@ insert:
 			curr = prev;
 			calcoffsets();
 		}
+    arrowkey = 1;
 		break;
 	case XK_Next:
 	case XK_KP_Next:
@@ -665,6 +670,7 @@ insert:
 		break;
 	case XK_Right:
 	case XK_KP_Right:
+    arrowkey = 1;
 		if (text[cursor] != '\0') {
 			cursor = nextrune(+1);
 			break;
@@ -674,6 +680,7 @@ insert:
 		/* fallthrough */
 	case XK_Down:
 	case XK_KP_Down:
+    arrowkey = 1;
 		if (sel && sel->right && (sel = sel->right) == next) {
 			curr = next;
 			calcoffsets();
@@ -695,7 +702,13 @@ insert:
 	}
 
 draw:
-	if (incremental) {
+  if (constout && arrowkey) {
+    if (!prevotext || prevotext != sel->otext) {
+      puts(sel->otext);
+      fflush(stdout);
+      prevotext = sel->otext;
+    }
+  } else if (incremental) {
 		puts(text);
 		fflush(stdout);
 	}
@@ -928,7 +941,7 @@ setup(void)
 static void
 usage(void)
 {
-	die("usage: dmenu [-bfirRvX] [-fw] [-wm] [-l lines] [-h height] [-p prompt] [-fn font]\n"
+	die("usage: dmenu [-bfiorRvX] [-fw] [-wm] [-l lines] [-h height] [-p prompt] [-fn font]\n"
 	    "             [-m monitor] [-nb color] [-nf color] [-sb color] [-sf color] [-nhb color]\n"
       "             [-nhb color] [-nhf color] [-shb color] [-shf color] [-w windowid]\n"
       "             [-x xoffset] [-y yoffset] [-z width]\n"
@@ -970,6 +983,8 @@ main(int argc, char *argv[])
 			revtab = (!revtab);
 		else if (!strcmp(argv[i], "-R"))   /* incremental */
 			incremental = 1;
+		else if (!strcmp(argv[i], "-o"))   /* constout */
+			constout = 1;
 		else if (i + 1 == argc)
 			usage();
 		/* these options take one argument */
