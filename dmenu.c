@@ -50,6 +50,7 @@ static int dmy = 0; /* put dmenu at this y offset (measured from the bottom if t
 static unsigned int dmw = 0; /* make dmenu this wide */
 static int inputw = 0, promptw;
 static int lrpad; /* sum of left and right padding */
+static int reject_no_match = 0;
 static size_t cursor;
 static struct item *items = NULL;
 static struct item *matches, *matchend;
@@ -450,12 +451,26 @@ insert(const char *str, ssize_t n)
 {
 	if (strlen(text) + n > sizeof text - 1)
 		return;
+
+	static char last[BUFSIZ] = "";
+	if(reject_no_match) {
+		/* store last text value in case we need to revert it */
+		memcpy(last, text, BUFSIZ);
+	}
+
 	/* move existing text out of the way, insert new text, and update cursor */
 	memmove(&text[cursor + n], &text[cursor], sizeof text - cursor - MAX(n, 0));
 	if (n > 0)
 		memcpy(&text[cursor], str, n);
 	cursor += n;
 	match();
+
+	if(!matches && reject_no_match) {
+		/* revert to last text value if theres no match */
+		memcpy(text, last, BUFSIZ);
+		cursor -= n;
+		match();
+	}
 }
 
 static size_t
@@ -937,7 +952,7 @@ setup(void)
 static void
 usage(void)
 {
-	die("usage: dmenu [-bfiorRvX] [-fw] [-wm] [-l lines] [-h height] [-p prompt] [-fn font]\n"
+	die("usage: dmenu [-bfiorRvX] [-fw] [-re] [-wm] [-l lines] [-h height] [-p prompt] [-fn font]\n"
 	    "             [-m monitor] [-nb color] [-nf color] [-sb color] [-sf color] [-nhb color]\n"
       "             [-nhb color] [-nhf color] [-shb color] [-shf color] [-w windowid]\n"
       "             [-x xoffset] [-y yoffset] [-z width]\n"
@@ -977,6 +992,8 @@ main(int argc, char *argv[])
 			managed = 1;
 		else if (!strcmp(argv[i], "-r")) /* reverse the tab separation */
 			revtab = (!revtab);
+		else if (!strcmp(argv[i], "-re")) /* reject input which results in no match */
+			reject_no_match = 1;
 		else if (!strcmp(argv[i], "-R"))   /* incremental */
 			incremental = 1;
 		else if (!strcmp(argv[i], "-o"))   /* constout */
