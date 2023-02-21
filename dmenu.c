@@ -54,7 +54,6 @@ static size_t cursor;
 static struct item *items = NULL;
 static struct item *matches, *matchend;
 static struct item *prev, *curr, *next, *sel;
-static *prevotext = NULL;
 static int mon = -1, screen;
 static int managed = 0;
 
@@ -703,11 +702,8 @@ keypress(XKeyEvent *ev)
 
 draw:
   if (constout && arrowkey) {
-    if (!prevotext || prevotext != sel->otext) {
-      puts(sel->otext);
-      fflush(stdout);
-      prevotext = sel->otext;
-    }
+		puts(sel->otext);
+		fflush(stdout);
   } else if (incremental) {
 		puts(text);
 		fflush(stdout);
