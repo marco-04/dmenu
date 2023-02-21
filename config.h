@@ -23,6 +23,7 @@ static const char *colors[SchemeLast][2] = {
 	/*                         fg         bg       */
 	[SchemeNorm]          = { "#bbbbbb", "#222222" },
 	[SchemeSel]           = { "#eeeeee", "#005577" },
+	[SchemeMid]           = { "#eeeeee", "#770000" },
 	[SchemeOut]           = { "#000000", "#00ffff" },
 	[SchemeSelHighlight]  = { "#ffc978", "#005577" },
 	[SchemeNormHighlight] = { "#ffc978", "#222222" },
@@ -54,3 +55,6 @@ static int revtab = 0;
 
 /* Size of the window border */
 static unsigned int border_width = 5;
+
+/* Fullwidth toggle */
+static int fullwidth = 0;

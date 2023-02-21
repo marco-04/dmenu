@@ -30,7 +30,7 @@
 #define OPAQUE                0xffU
 
 /* enums */
-enum { SchemeNorm, SchemeSel, SchemeOut, SchemeNormHighlight, SchemeSelHighlight,
+enum { SchemeNorm, SchemeSel, SchemeOut, SchemeMid, SchemeNormHighlight, SchemeSelHighlight,
        SchemeOutHighlight, SchemeLast }; /* color schemes */
 
 
@@ -200,6 +200,8 @@ drawitem(struct item *item, int x, int y, int w)
 	int r;
 	if (item == sel)
 		drw_setscheme(drw, scheme[SchemeSel]);
+	else if (item->left == sel || item->right == sel)
+		drw_setscheme(drw, scheme[SchemeMid]);
 	else if (item->out)
 		drw_setscheme(drw, scheme[SchemeOut]);
 	else
@@ -237,8 +239,12 @@ drawmenu(void)
 
 	if (lines > 0) {
 		/* draw vertical list */
-		for (item = curr; item != next; item = item->right)
-			drawitem(item, x, y += bh, mw - x);
+		for (item = curr; item != next; item = item->right) {
+      if (!fullwidth)
+        drawitem(item, x, y += bh, mw - x);
+      else
+			  drawitem(item, x - promptw, y += bh, mw);
+    }
 	} else if (matches) {
 		/* draw horizontal list */
 		x += inputw;
@@ -912,8 +918,8 @@ setup(void)
 static void
 usage(void)
 {
-	die("usage: dmenu [-bfirvX] [-l lines] [-h height] [-p prompt] [-fn font] [-m monitor]\n"
-	    "             [-nb color] [-nf color] [-sb color] [-sf color] [-nhb color]\n"
+	die("usage: dmenu [-bfirvX] [-fw] [-wm] [-l lines] [-h height] [-p prompt] [-fn font]\n"
+	    "             [-m monitor] [-nb color] [-nf color] [-sb color] [-sf color] [-nhb color]\n"
       "             [-nhb color] [-nhf color] [-shb color] [-shf color] [-w windowid]\n"
       "             [-x xoffset] [-y yoffset] [-z width]\n"
     );
@@ -943,7 +949,12 @@ main(int argc, char *argv[])
 			fstrstr = cistrstr;
 		} else if (!strcmp(argv[i], "-X"))   /* invert use_prefix */
 			use_prefix = !use_prefix;
-		else if (!strcmp(argv[i], "-wm")) /* display as managed wm window */
+		else if (!strcmp(argv[i], "-fw")) {   /* toggles fullwidth */
+      if (!fullwidth)
+			  fullwidth = 1;
+      else
+        fullwidth = 0;
+    } else if (!strcmp(argv[i], "-wm")) /* display as managed wm window */
 			managed = 1;
 		else if (!strcmp(argv[i], "-r")) /* reverse the tab separation */
 			revtab = (!revtab);
