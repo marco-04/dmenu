@@ -24,6 +24,7 @@ dmenu \- dynamic menu
 .IR color ]
 .RB [ \-nf
 .IR color ]
+.RB [ \-R ]
 .RB [ \-sb
 .IR color ]
 .RB [ \-sf
@@ -38,6 +39,8 @@ dmenu \- dynamic menu
 .IR color ]
 .RB [ \-w
 .IR windowid ]
+.RB [ \-n
+.IR number ]
 .RB [ \-wm ]
 .P
 .BR dmenu_run " ..."
@@ -98,6 +101,9 @@ sets the width of the dmenu window.
 .BI \-p " prompt"
 defines the prompt to be displayed to the left of the input field.
 .TP
+.B \-R
+dmenu outputs text each time a key is pressed.
+.TP
 .BI \-fn " font"
 defines the font or font set used.
 .TP
@@ -136,6 +142,9 @@ Invert prefix matching setting.
 .TP
 .BI \-w " windowid"
 embed into windowid.
+.TP
+.BI \-n " number"
+preseslected item starting from 0.
 .TP
 .BI \-wm
 Display as a managed WM window (e.g. don't set overide_redirect flag)

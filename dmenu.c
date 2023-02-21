@@ -695,6 +695,10 @@ insert:
 	}
 
 draw:
+	if (incremental) {
+		puts(text);
+		fflush(stdout);
+	}
 	drawmenu();
 }
 
@@ -869,6 +873,12 @@ setup(void)
 	promptw = (prompt && *prompt) ? TEXTW(prompt) - lrpad / 4 : 0;
 	inputw = mw / 3; /* input width: ~33% of monitor width */
 	match();
+	for (i = 0; i < preselected; i++) {
+		if (sel && sel->right && (sel = sel->right) == next) {
+			curr = next;
+			calcoffsets();
+		}
+	}
 
 	/* create menu window */
 	swa.override_redirect = managed ? False : True;
@@ -918,7 +928,7 @@ setup(void)
 static void
 usage(void)
 {
-	die("usage: dmenu [-bfirvX] [-fw] [-wm] [-l lines] [-h height] [-p prompt] [-fn font]\n"
+	die("usage: dmenu [-bfirRvX] [-fw] [-wm] [-l lines] [-h height] [-p prompt] [-fn font]\n"
 	    "             [-m monitor] [-nb color] [-nf color] [-sb color] [-sf color] [-nhb color]\n"
       "             [-nhb color] [-nhf color] [-shb color] [-shf color] [-w windowid]\n"
       "             [-x xoffset] [-y yoffset] [-z width]\n"
@@ -958,6 +968,8 @@ main(int argc, char *argv[])
 			managed = 1;
 		else if (!strcmp(argv[i], "-r")) /* reverse the tab separation */
 			revtab = (!revtab);
+		else if (!strcmp(argv[i], "-R"))   /* incremental */
+			incremental = 1;
 		else if (i + 1 == argc)
 			usage();
 		/* these options take one argument */
@@ -969,6 +981,8 @@ main(int argc, char *argv[])
 			dmw = atoi(argv[++i]);
 		else if (!strcmp(argv[i], "-l"))   /* number of lines in vertical list */
 			lines = atoi(argv[++i]);
+		else if (!strcmp(argv[i], "-n"))   /* preselected item */
+			preselected = atoi(argv[++i]);
 		else if (!strcmp(argv[i], "-h")) { /* minimum height of one menu line */
 			lineheight = atoi(argv[++i]);
 			lineheight = MAX(lineheight, min_lineheight);
