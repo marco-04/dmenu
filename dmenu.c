@@ -45,9 +45,6 @@ struct item {
 static char text[BUFSIZ] = "";
 static char *embed;
 static int bh, mw, mh;
-static int dmx = 0; /* put dmenu at this x offset */
-static int dmy = 0; /* put dmenu at this y offset (measured from the bottom if topbar is 0) */
-static unsigned int dmw = 0; /* make dmenu this wide */
 static int inputw = 0, promptw;
 static int lrpad; /* sum of left and right padding */
 static size_t cursor;
@@ -132,9 +129,6 @@ drawhighlights(struct item *item, int x, int y, int maxw)
 			indentx = TEXTW(item->text);
 			item->text[highlightlen] = restorechar;
 
-			// Move highlight str end, draw highlight, & restore
-			restorechar = highlight[strlen(token)];
-			highlight[strlen(token)] = '\0';
 			// Move highlight str end, draw highlight, & restore
 			restorechar = highlight[strlen(token)];
 			highlight[strlen(token)] = '\0';
@@ -840,9 +834,9 @@ setup(void)
 			x = info[i].x_org + ((info[i].width  - mw) / 2);
 			y = info[i].y_org + ((info[i].height - mh) / 2);
 		} else {
-      x = info[i].x_org + dmx;
-      y = info[i].y_org + (topbar ? dmy : info[i].height - mh - dmy);
-      mw = (dmw>0 ? dmw : info[i].width);
+			x = info[i].x_org;
+			y = info[i].y_org + (topbar ? 0 : info[i].height - mh);
+			mw = info[i].width;
 		}
 
 		XFree(info);
@@ -856,13 +850,12 @@ setup(void)
 		if (centered) {
 			mw = MIN(MAX(max_textw() + promptw, min_width), wa.width);
 			x = (wa.width  - mw) / 2;
+			y = (wa.height - mh) / 2;
+		} else {
+			x = 0;
 			y = topbar ? 0 : wa.height - mh;
 			mw = wa.width;
-		} else {
-      x = dmx;
-      y = topbar ? dmy : wa.height - mh - dmy;
-      mw = (dmw>0 ? dmw : wa.width);
-    }
+		}
 	}
 	promptw = (prompt && *prompt) ? TEXTW(prompt) - lrpad / 4 : 0;
 	inputw = mw / 3; /* input width: ~33% of monitor width */
@@ -916,10 +909,9 @@ setup(void)
 static void
 usage(void)
 {
-	die("usage: dmenu [-bfirvX] [-l lines]  [-p prompt] [-fn font] [-m monitor]\n"
+	die("usage: dmenu [-bfirvx] [-l lines] [-h height] [-p prompt] [-fn font] [-m monitor]\n"
 	    "             [-nb color] [-nf color] [-sb color] [-sf color] [-nhb color]\n"
-      "             [-nhb color] [-nhf color] [-shb color] [-shf color] [-w windowid]\n"
-      "             [-x xoffset] [-y yoffset] [-z width]\n");
+      "             [-nhb color] [-nhf color] [-shb color] [-shf color] [-w windowid]\n");
 }
 
 int
@@ -944,7 +936,7 @@ main(int argc, char *argv[])
 		else if (!strcmp(argv[i], "-i")) { /* case-insensitive item matching */
 			fstrncmp = strncasecmp;
 			fstrstr = cistrstr;
-		} else if (!strcmp(argv[i], "-X"))   /* invert use_prefix */
+		} else if (!strcmp(argv[i], "-x"))   /* invert use_prefix */
 			use_prefix = !use_prefix;
 		else if (!strcmp(argv[i], "-wm")) /* display as managed wm window */
 			managed = 1;
@@ -953,12 +945,6 @@ main(int argc, char *argv[])
 		else if (i + 1 == argc)
 			usage();
 		/* these options take one argument */
-		else if (!strcmp(argv[i], "-x"))   /* window x offset */
-			dmx = atoi(argv[++i]);
-		else if (!strcmp(argv[i], "-y"))   /* window y offset (from bottom up if -b) */
-			dmy = atoi(argv[++i]);
-		else if (!strcmp(argv[i], "-z"))   /* make dmenu this wide */
-			dmw = atoi(argv[++i]);
 		else if (!strcmp(argv[i], "-l"))   /* number of lines in vertical list */
 			lines = atoi(argv[++i]);
 		else if (!strcmp(argv[i], "-h")) { /* minimum height of one menu line */
