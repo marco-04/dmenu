@@ -6,6 +6,8 @@ static int incremental = 0;                 /* -r  option; if 1, outputs text ea
 static int constout = 0;                    /* -o  option; if 1, outputs currently selected text each time an arrow key is pressed (overrides incremental) */
 static int fuzzy = 1;                      /* -F  option; if 0, dmenu doesn't use fuzzy matching     */
 static const unsigned int alpha = 0xf0;
+static unsigned int maxhist     = 64;
+static int histnodup            = 1;	/* if 0, record repeated histories */
 /* -fn option overrides fonts[0]; default X11 font or font set */
 static const char *fonts[] = {
 	"monospace:size=10"
