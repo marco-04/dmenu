@@ -37,6 +37,7 @@ enum { SchemeNorm, SchemeSel, SchemeOut, SchemeMid, SchemeNormHighlight, SchemeS
 
 struct item {
 	char *text;
+	char *stext;
 	struct item *left, *right;
 	int out;
 	double distance;
@@ -219,7 +220,7 @@ drawitem(struct item *item, int x, int y, int w)
 	else
 		drw_setscheme(drw, scheme[SchemeNorm]);
 
-	r = drw_text(drw, x, y, w, bh, lrpad / 2, item->text, 0);
+	r = drw_text(drw, x, y, w, bh, lrpad / 2, item->stext, 0);
 	drawhighlights(item, x, y, w);
 	return r;
 }
@@ -267,7 +268,7 @@ drawmenu(void)
 		}
 		x += w;
 		for (item = curr; item != next; item = item->right)
-			x = drawitem(item, x, 0, textw_clamp(item->text, mw - x - TEXTW(">")));
+			x = drawitem(item, x, 0, textw_clamp(item->stext, mw - x - TEXTW(">")));
 		if (next) {
 			w = TEXTW(">");
 			drw_setscheme(drw, scheme[SchemeNorm]);
@@ -923,6 +924,7 @@ static void
 readstdin(void)
 {
 	char *line = NULL;
+  char *buf, *p;
 	size_t i, junk, itemsiz = 0;
 	ssize_t len;
 
@@ -936,6 +938,11 @@ readstdin(void)
 		if (line[len - 1] == '\n')
 			line[len - 1] = '\0';
     items[i].text = line;
+    if (!(buf = strdup(line)))
+      die("cannot strdup %u bytes:", strlen(line) + 1);
+    if ((p = strchr(buf, '\t')))
+      *p = '\0';
+		items[i].stext = buf;
 		items[i].out = 0;
 		line = NULL; /* next call of getline() allocates a new line */
 	}
