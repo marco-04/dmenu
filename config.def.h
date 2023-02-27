@@ -52,11 +52,6 @@ static unsigned int min_lineheight = 8;
  */
 static const char worddelimiters[] = " ";
 
-/* tsv-alt: reverse the order of tab separation.
- * 0 = display<TAB>output. 1 = output<TAB>display
- * can be reversed with -r as well */
-static int revtab = 0;
-
 /* Size of the window border */
 static unsigned int border_width = 5;
 

@@ -37,7 +37,6 @@ enum { SchemeNorm, SchemeSel, SchemeOut, SchemeMid, SchemeNormHighlight, SchemeS
 
 struct item {
 	char *text;
-	char *otext;
 	struct item *left, *right;
 	int out;
 	double distance;
@@ -59,6 +58,8 @@ static struct item *prev, *curr, *next, *sel;
 static int mon = -1, screen;
 static int managed = 0;
 static int sortmatches = 1;
+
+static int firstout = 1;
 
 static Atom clip, utf8;
 static Display *dpy;
@@ -180,7 +181,7 @@ cleanup(void)
 	for (i = 0; i < SchemeLast; i++)
 		free(scheme[i]);
 	for (i = 0; items && items[i].text; ++i)
-		free(revtab ? items[i].otext : items[i].text);
+		free(items[i].text);
 	free(items);
 	drw_free(drw);
 	XSync(dpy, False);
@@ -274,6 +275,11 @@ drawmenu(void)
 		}
 	}
 	drw_map(drw, win, 0, 0, mw, mh);
+
+  if (constout && firstout) {
+    puts(sel->text);
+    firstout = 0;
+  }
 }
 
 static void
@@ -841,7 +847,7 @@ keypress(XKeyEvent *ev)
 		break;
 	case XK_Return:
 	case XK_KP_Enter:
-		puts((sel && !(ev->state & ShiftMask)) ? sel->otext : text);
+		puts((sel && !(ev->state & ShiftMask)) ? sel->text : text);
 		if (!(ev->state & ControlMask)) {
 			savehistory((sel && !(ev->state & ShiftMask))
 				    ? sel->text : text);
@@ -886,7 +892,7 @@ keypress(XKeyEvent *ev)
 
 draw:
   if (constout && arrowkey) {
-		puts(sel->otext);
+		puts(sel->text);
 		fflush(stdout);
   } else if (incremental) {
 		puts(text);
@@ -929,17 +935,13 @@ readstdin(void)
 		}
 		if (line[len - 1] == '\n')
 			line[len - 1] = '\0';
-		items[i].text = items[i].otext = line;
-		if ((line = strchr(line, '\t'))) {
-			*line++ = '\0';
-			revtab ? (items[i].text = line) : (items[i].otext = line);
-		}
+    items[i].text = line;
 		items[i].out = 0;
 		line = NULL; /* next call of getline() allocates a new line */
 	}
 	free(line);
 	if (items)
-		items[i].text = items[i].otext = NULL;
+		items[i].text = NULL;
 	lines = MIN(lines, i);
 }
 
@@ -1126,7 +1128,7 @@ setup(void)
 static void
 usage(void)
 {
-	die("usage: dmenu [-bfiorRSvX] [-fw] [-re] [-wm] [-l lines] [-h height] [-p prompt] [-fn font]\n"
+	die("usage: dmenu [-bfioRSvX] [-fw] [-re] [-wm] [-l lines] [-h height] [-p prompt] [-fn font]\n"
 	    "             [-m monitor] [-nb color] [-nf color] [-sb color] [-sf color] [-nhb color]\n"
       "             [-nhb color] [-nhf color] [-shb color] [-shf color] [-w windowid]\n"
       "             [-x xoffset] [-y yoffset] [-z width] [-H histfile]\n"
@@ -1225,8 +1227,6 @@ main(int argc, char *argv[])
         fullwidth = 0;
     } else if (!strcmp(argv[i], "-wm")) /* display as managed wm window */
 			managed = 1;
-		else if (!strcmp(argv[i], "-r")) /* reverse the tab separation */
-			revtab = (!revtab);
 		else if (!strcmp(argv[i], "-re")) /* reject input which results in no match */
 			reject_no_match = 1;
 		else if (!strcmp(argv[i], "-R"))   /* incremental */
